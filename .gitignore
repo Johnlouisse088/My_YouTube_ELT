@@ -1,0 +1,8 @@
+venv/
+
+# __pychache__ - is a folder that Python automatically creates to store compiled bytecode
+# Python is both interpreter and copilergit
+__pychache__/
+
+# a simple text file used to store private settings and environment variables like API keys, database passwords, and port numbers
+.env

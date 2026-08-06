@@ -6,3 +6,5 @@ __pychache__/
 
 # a simple text file used to store private settings and environment variables like API keys, database passwords, and port numbers
 .env
+
+data/

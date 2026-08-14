@@ -42,8 +42,25 @@ def insert_rows(cur, conn, schema, row):
             video_id = "Video_ID"
             cur.execute(
                 f"""
-                INSERT INTO {schema}.{table}("Video_ID", "Video_Title", "Upload_Date", "Duration", "Video_Type", "Video_Views", "Likes_Count", "Comments_Count")
-                VALUES (%(Video_ID)s, %(Video_Title)s, %(Upload_Date)s, %(Duration)s, %(Video_Type)s, %(Video_Views)s, %(Likes_Count)s, %(Comments_Count)s)
+                INSERT INTO {schema}.{table}(
+                    "Video_ID", 
+                    Video_Title", 
+                    "Upload_Date", 
+                    Duration", 
+                    "Video_Type", 
+                    "Video_Views", 
+                    "Likes_Count", 
+                    "Comments_Count"
+                )
+                VALUES (
+                    %(Video_ID)s, 
+                    %(Video_Title)s, 
+                    %(Upload_Date)s, 
+                    %(Duration)s, 
+                    %(Video_Type)s, 
+                    %(Video_Views)s, 
+                    %(Likes_Count)s, 
+                    %(Comments_Count)s)
                 """,
                 row,
             )
@@ -96,20 +113,17 @@ def update_rows(cur, conn, schema, row):
         logger.error(f"Error updating row with Video_ID: {row[video_id]} - {e}")
         raise e
 
-
+# Delete videos from the database whose Video_IDs are in ids_to_delete.
 def delete_rows(cur, conn, schema, ids_to_delete):
-
+    # Example: ids_to_delete = {"A123", "B456"}
     try:
-
         ids_to_delete = f"""({', '.join(f"'{id}'" for id in ids_to_delete)})"""
-
         cur.execute(
             f"""
             DELETE FROM {schema}.{table}
             WHERE "Video_ID" IN {ids_to_delete};
             """
         )
-
         conn.commit()
         logger.info(f"Deleted rows with Video_IDs: {ids_to_delete}")
 

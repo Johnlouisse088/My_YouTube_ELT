@@ -6,6 +6,8 @@ logger = logging.getLogger(__name__)
 SODA_PATH = "/opt/airflow/include/soda"
 DATASOURCE = "pg_datasource"
 
+# Soda is a data quality testing/monitoring tool. It checks whether the data in your database follows the rules you expect. Just like unit testing in backed development
+
 
 def yt_elt_data_quality(schema):
     try:

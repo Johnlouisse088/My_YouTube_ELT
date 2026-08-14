@@ -16,6 +16,10 @@ from airflow.decorators import task
 """
 This file is basically handling the staging layer and core layer of your pipeline.
 - A staging layer is a temporary area where you store data before transforming it into the final clean data.  
+
+Staging = data close to how it came from the source.
+Core = cleaned/transformed data ready for use.
+
 """
 logger = logging.getLogger(__name__) # This creates a logger for this Python file. # the __name__ is current file
 table = "yt_api" # the table name
@@ -91,28 +95,37 @@ def core_table():  # read staging data, transform it, then synchronize the core 
     conn, cur = None, None
 
     try:
-        conn, cur = get_conn_cursor()
-        create_schema(schema)
-        create_table(schema)
-        table_ids = get_video_ids(cur, schema)
-        current_video_ids = set()
-        cur.execute(f"SELECT * FROM staging.{table};")
-        rows = cur.fetchall()
+        conn, cur = get_conn_cursor()  # This connects to PostgreSQL. example output: <connection object at 0x...> <cursor object at 0x...>
+        create_schema(schema)  # Creates a PostgreSQL schema
+        create_table(schema)  # Responsible for creating the yt_api table
+        table_ids = get_video_ids(cur, schema)  # gets all existing video IDs from a database table (staging or core) and returns them as a Python list. #example output: table_ids = ["abc123", "xyz456", "qwe789"]
+        current_video_ids = set() # set of video ids
+        cur.execute(f"SELECT * FROM staging.{table};")  # Get all columns and all rows from the yt_api table inside the staging schema.
+        rows = cur.fetchall()  # Get all the records returned by the previous SELECT.
 
         for row in rows:
-            current_video_ids.add(row["Video_ID"])
+            current_video_ids.add(row["Video_ID"])  # Add the id of the video from the staging table
+            # table_ids - list of ids from core
+            # row - data from staging
             if len(table_ids) == 0:
-                transformed_row = transform_data(row)
-                insert_rows(cur, conn, schema, transformed_row)
+                transformed_row = transform_data(row) # Configured the duration and added video_type field
+                insert_rows(cur, conn, schema, transformed_row) # Insert one video (row)
             else:
-                transformed_row = transform_data(row)
-                if transformed_row["Video_ID"] in table_ids:
-                    update_rows(cur, conn, schema, transformed_row)
+                transformed_row = transform_data(row) # Configured the duration and added video_type field
+                if transformed_row["Video_ID"] in table_ids: # If the video row from staging is not existing in core table_ids (core), you need to update the core table
+                    update_rows(cur, conn, schema, transformed_row) # Update the video (row)
                 else:
-                    insert_rows(cur, conn, schema, transformed_row)
+                    insert_rows(cur, conn, schema, transformed_row) # Insert one video (row)
 
+        """
+        table_ids = {1, 2, 3, 4, 5} Core
+        current_video_ids = {1, 2, 3, 4} Staging
+        
+        -> Therefore, video ID 5 should be deleted from Core so that Core stays synchronized with Staging.  
+        """
         ids_to_delete = set(table_ids) - current_video_ids
         if ids_to_delete:
+            # Remove the records from the database that match the IDs in ids_to_delete.
             delete_rows(cur, conn, schema, ids_to_delete)
 
         logger.info(f"{schema} table update completed")
